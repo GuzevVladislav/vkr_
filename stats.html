@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Статистика — TaskFlow{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title">Статистика</div>
+  <div class="page-subtitle">Анализ вашей продуктивности и хронотипа</div>
+</div>
+
+<div class="dash-grid" style="margin-bottom:2rem;">
+  <div class="stat-card">
+    <div class="stat-label">Всего задач</div>
+    <div class="stat-value">{{ total_tasks }}</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Выполнено</div>
+    <div class="stat-value">{{ total_done }}</div>
+  </div>
+  <div class="stat-card pink">
+    <div class="stat-label">Процент выполнения</div>
+    <div class="stat-value">{% if total_tasks %}{{ (total_done / total_tasks * 100)|round|int }}%{% else %}—{% endif %}</div>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <!-- Daily completions -->
+  <div class="chart-card">
+    <div class="chart-title">Выполнено задач (7 дней)</div>
+    <canvas id="dailyChart"></canvas>
+  </div>
+
+  <!-- Quadrant distribution -->
+  <div class="chart-card">
+    <div class="chart-title">Распределение по матрице Эйзенхауэра</div>
+    <canvas id="quadrantChart"></canvas>
+  </div>
+
+  <!-- Hourly heatmap (chronotype) -->
+  <div class="chart-card full">
+    <div class="chart-title">Активность по часам суток <span class="ai-stub-badge">хронотип</span></div>
+    <canvas id="hourlyChart" style="max-height:140px;"></canvas>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+const labelColor = isDark ? '#6b6b8a' : '#8080a0';
+
+Chart.defaults.color = labelColor;
+Chart.defaults.borderColor = gridColor;
+
+const dailyData = {{ daily_stats|safe }};
+const quadrantData = {{ quadrant_data|safe }};
+const hourlyData = {{ hourly_data|safe }};
+
+// Daily chart
+new Chart(document.getElementById('dailyChart'), {
+  type: 'bar',
+  data: {
+    labels: dailyData.map(d => d.date.slice(5)),
+    datasets: [{
+      label: 'Выполнено',
+      data: dailyData.map(d => d.done),
+      backgroundColor: 'rgba(124,108,250,0.5)',
+      borderColor: '#7c6cfa',
+      borderWidth: 2, borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, plugins: {legend:{display:false}},
+    scales: { y: { beginAtZero:true, ticks:{stepSize:1} } }
+  }
+});
+
+// Quadrant donut
+new Chart(document.getElementById('quadrantChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['A — срочно/важно','B — важно','C — срочно','D — прочее'],
+    datasets: [{
+      data: [quadrantData.A||0, quadrantData.B||0, quadrantData.C||0, quadrantData.D||0],
+      backgroundColor: ['rgba(255,107,107,.7)','rgba(76,255,160,.7)','rgba(255,209,102,.7)','rgba(100,100,140,.4)'],
+      borderWidth: 0,
+    }]
+  },
+  options: { responsive:true, cutout:'62%', plugins:{ legend:{position:'bottom', labels:{boxWidth:12, padding:12}} } }
+});
+
+// Hourly bar
+const hours = Object.keys(hourlyData);
+const counts = Object.values(hourlyData);
+new Chart(document.getElementById('hourlyChart'), {
+  type: 'bar',
+  data: {
+    labels: hours.map(h => h+':00'),
+    datasets: [{
+      label: 'Задач завершено',
+      data: counts,
+      backgroundColor: counts.map(v => v > 0 ? 'rgba(124,108,250,0.6)' : 'rgba(124,108,250,0.08)'),
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive:true,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ ticks:{ maxRotation:0, font:{size:10} } },
+      y:{ beginAtZero:true, ticks:{stepSize:1} }
+    }
+  }
+});
+</script>
+{% endblock %}

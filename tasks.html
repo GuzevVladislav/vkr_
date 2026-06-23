@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Задачи — TaskFlow{% endblock %}
+{% block content %}
+
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <div class="page-title">Задачи</div>
+    <div class="page-subtitle">Матрица Эйзенхауэра</div>
+  </div>
+  <a href="{{ url_for('create_task') }}" class="btn btn-primary">+ Новая задача</a>
+</div>
+
+<!-- Filters -->
+<div class="tasks-toolbar">
+  <span style="font-size:.8rem; color:var(--text-muted); margin-right:.3rem;">Квадрант:</span>
+  {% for q, label in [('all','Все'),('A','A — срочно/важно'),('B','B — важно'),('C','C — срочно'),('D','D — прочее')] %}
+  <a href="{{ url_for('tasks', quadrant=q, status=selected_status) }}"
+     class="filter-btn {% if selected_quadrant == q %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+  <div style="margin-left:auto; display:flex; gap:.5rem;">
+    {% for s, label in [('pending','Активные'),('done','Выполненные'),('all','Все')] %}
+    <a href="{{ url_for('tasks', quadrant=selected_quadrant, status=s) }}"
+       class="filter-btn {% if selected_status == s %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Task list -->
+{% if tasks %}
+  {% for task in tasks %}
+  <div class="task-card {% if task.status == 'done' %}done{% endif %}" id="task-{{ task.id }}">
+    <div>
+      <div class="task-title">{{ task.title }}</div>
+      {% if task.description %}
+      <div style="font-size:.85rem; color:var(--text-muted); margin-bottom:.4rem;">{{ task.description[:120] }}{% if task.description|length > 120 %}…{% endif %}</div>
+      {% endif %}
+      <div class="task-meta">
+        {% if task.priority_quadrant %}
+        <span class="quadrant-pill q-{{ task.priority_quadrant }}">{{ task.priority_quadrant }}</span>
+        {% endif %}
+
+        {% if task.difficulty %}
+        <span><span class="diff-dot diff-{{ task.difficulty }}"></span> {{ {'easy':'Лёгкая','medium':'Средняя','hard':'Сложная'}[task.difficulty] }}</span>
+        {% endif %}
+        
+        {% if task.user_estimated_time %}
+        <span class="mono">~{{ task.user_estimated_time }} мин <span class="ai-stub-badge">AI</span></span>
+
+        {% else %}
+        <span class="mono">~{{ task.ai_estimated_time }} мин <span class="ai-stub-badge">AI</span></span>
+        {% endif %}
+
+        {% if task.deadline %}
+        <span>📅 {{ task.deadline[:10] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="task-actions" style="flex-direction:column; gap:.4rem;">
+      {% if task.status == 'pending' %}
+      <form method="POST" action="{{ url_for('complete_task', task_id=task.id) }}" style="display:inline;">
+        <button type="submit" class="btn btn-ghost btn-sm" title="Выполнено">✓</button>
+      </form>
+      <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-ghost btn-sm" title="Редактировать">✎</a>
+      {% endif %}
+      <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}"
+            onsubmit="return confirm('Удалить задачу?')" style="display:inline;">
+        <button type="submit" class="btn btn-sm" style="color:var(--red); background:rgba(255,107,107,.1);" title="Удалить">✕</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🗂️</div>
+    <div>Нет задач для отображения</div>
+    <a href="{{ url_for('create_task') }}" class="btn btn-primary mt1">Создать задачу</a>
+  </div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadRisk(taskId) {
+  const badge = document.getElementById('risk-' + taskId);
+  badge.textContent = '⚡ загрузка…';
+  try {
+    const resp = await fetch('/ai/risk', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({task_id: taskId})
+    });
+    const data = await resp.json();
+    const pct = Math.round(data.probability * 100);
+    badge.textContent = `⚡ ${pct}% — ${data.message}`;
+    badge.className = 'risk-badge ' + (pct > 60 ? 'risk-high' : pct > 35 ? 'risk-med' : 'risk-low');
+    badge.title = 'AI STUB — заглушка';
+    badge.onclick = null;
+  } catch {
+    badge.textContent = '⚡ ошибка';
+  }
+}
+</script>
+{% endblock %}

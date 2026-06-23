@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Вход — TaskFlow{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">TF</div>
+    <div class="auth-sub">Умный планировщик задач</div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label class="form-label">Логин</label>
+        <input class="form-input" type="text" name="login" placeholder="your_login" required autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input class="form-input" type="password" name="password" placeholder="••••••••" required autocomplete="current-password"/>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full mt1">Войти</button>
+    </form>
+
+    <div class="auth-link">
+      Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

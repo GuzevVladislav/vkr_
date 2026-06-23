@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Главная — TaskFlow{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title">Добрый день, {{ user.name }} 👋</div>
+  <div class="page-subtitle">Вот ваш обзор на сегодня</div>
+</div>
+
+<div class="dash-grid">
+  <div class="stat-card">
+    <div class="stat-label">Активных задач</div>
+    <div class="stat-value">{{ pending_count }}</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Выполнено всего</div>
+    <div class="stat-value">{{ completed_count }}</div>
+  </div>
+  <div class="stat-card pink">
+    <div class="stat-label">Фокус квадранта</div>
+    <div class="stat-value" style="font-size:1.6rem;margin-top:.5rem;">B — важное</div>
+  </div>
+</div>
+
+<div class="ai-tip">
+  <div class="ai-tip-icon">✦</div>
+  <div>
+    <div class="ai-tip-label">AI-Совет <span class="ai-stub-badge">STUB</span></div>
+    <div class="ai-tip-text">{{ ai_tip }}</div>
+  </div>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+  <h2 style="font-size:1.1rem; font-weight:700;">Ближайшие задачи</h2>
+  <a href="{{ url_for('create_task') }}" class="btn btn-primary btn-sm">+ Новая задача</a>
+</div>
+
+{% if tasks %}
+  {% for task in tasks %}
+  <div class="task-card {% if task.status == 'done' %}done{% endif %}">
+    <div>
+      <div class="task-title">{{ task.title }}</div>
+      <div class="task-meta">
+        {% if task.priority_quadrant %}
+        <span class="quadrant-pill q-{{ task.priority_quadrant }}">{{ task.priority_quadrant }}</span>
+        {% endif %}
+        {% if task.difficulty %}
+        <span><span class="diff-dot diff-{{ task.difficulty }}"></span> {{ {'easy':'Лёгкая','medium':'Средняя','hard':'Сложная'}[task.difficulty] }}</span>
+        {% endif %}
+        {% if task.ai_estimated_time %}
+        <span class="mono">~{{ task.ai_estimated_time }} мин <span class="ai-stub-badge">AI</span></span>
+        {% endif %}
+        {% if task.deadline %}
+        <span>📅 {{ task.deadline[:10] }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="task-actions">
+      <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-ghost btn-sm">✎</a>
+    </div>
+  </div>
+  {% endfor %}
+  <div style="margin-top:1rem;">
+    <a href="{{ url_for('tasks') }}" class="btn btn-ghost">Все задачи →</a>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <div>У вас пока нет задач</div>
+    <a href="{{ url_for('create_task') }}" class="btn btn-primary mt1">Создать первую задачу</a>
+  </div>
+{% endif %}
+
+{% endblock %}

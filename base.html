@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}TaskFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if session.user_id %}
+<nav class="navbar">
+  <a href="{{ url_for('index') }}" class="nav-brand">TF</a>
+  <div class="nav-links">
+    <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Главная</a>
+    <a href="{{ url_for('tasks') }}" class="nav-link {% if request.endpoint in ['tasks','create_task','edit_task'] %}active{% endif %}">Задачи</a>
+    <a href="{{ url_for('pomodoro') }}" class="nav-link {% if request.endpoint == 'pomodoro' %}active{% endif %}">Pomodoro</a>
+    <a href="{{ url_for('stats') }}" class="nav-link {% if request.endpoint == 'stats' %}active{% endif %}">Статистика</a>
+  </div>
+  <div class="nav-right">
+    <button class="theme-toggle" id="themeToggle" title="Сменить тему">◐</button>
+    <span class="nav-user">{{ user.name }}</span>
+    <a href="{{ url_for('logout') }}" class="nav-link">Выйти</a>
+  </div>
+</nav>
+{% endif %}
+
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
